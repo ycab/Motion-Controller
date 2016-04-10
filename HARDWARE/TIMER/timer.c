@@ -141,7 +141,7 @@ void TIM3_IRQHandler(void)   //TIM3中断
 //			}
 //					
 //	
-     if(time_state==1)
+     if(time_state==1)//跑位移指令
 		 {
 				pulse_count++;
 			if(pulse_count==pulse_num)
@@ -184,18 +184,18 @@ void TIM3_IRQHandler(void)   //TIM3中断
 			 }
 		 }
    }
-	if(time_state==3)
-	{
-		if(speed_now>=speed)
+		if(time_state==3)//跑速度指令
 		{
+			if(speed_now>=speed)
+			{
 			
-		}
-		else
-		{
-				speed_now=speed_now+Acc/speed_now;
-				TIM3->ARR=720000/speed_now-1; 
-				TIM_SetCompare3(TIM3,TIM3->ARR/2);
-		}
+			}
+			else
+			{
+					speed_now=speed_now+Acc/speed_now;
+					TIM3->ARR=720000/speed_now-1; 
+					TIM_SetCompare3(TIM3,TIM3->ARR/2);
+			}
 	}
 
 

@@ -32,7 +32,7 @@ extern u16 command_edit_num[100];
 extern u16 p1;
 extern u8 end;
 extern u8 time_state;//设置定时器状态值
- typedef struct
+typedef struct
 {
 	u8  Direction;
 	u32 Pulse_Num;//脉冲个数

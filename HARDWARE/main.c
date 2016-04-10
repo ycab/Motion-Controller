@@ -33,6 +33,7 @@ u8 k;
 #define SIZE 100	 			  	//数组长度
 #define FLASH_SAVE_ADDR  0X08070000 				//设置FLASH 保存地址(必须为偶数)
 #define FLASH_SAVE_EDIT_ADDR (FLASH_SAVE_ADDR+0X00000100)
+#define FLASH_SAVE_WEIYI_ADDR (FLASH_SAVE_ADDR+0X00000300)
 void read_edit_num(void);
 
  
@@ -63,6 +64,7 @@ void set_system(void);
 void set_system_2(void);
 void set_system_3(void);
 void save_command(void);//保存命令
+void read_command(void);//读取命令
 u8 init_lock=1;//用于只初始化一遍界面
 u8 uc_lock=1;//防止按键重复按下
 u8 state=1;
@@ -107,7 +109,7 @@ typedef struct
 
 
 
-Dis_Weiyi Weiyi_Dis[100];//显示17段位移
+Dis_Weiyi Weiyi_Dis[100];//显示100段位移
 Num_Wei Set_Time[20];
 u8 command_edit_num_wei[100][5];//用于编辑4位的指令操作数,拆分成位，共一百条指令，数组第二位为1~4；0舍弃
 u16 command_edit_num[100];//用以编辑操作数，将上一行的4位合并，即可得到当前具体操作数
@@ -174,7 +176,7 @@ u8 pulse_step;
 u16 arr_test;
 
  /********************系统设置*************************************/
- u8 Select_Pro;//选择程序
+ u8 Select_Pro=1;//选择程序
 Num_Wei Pulse_Dangliang;	//一圈脉冲
 u32     PerPulseNum;
 Num_Wei Distance_Per;					//每圈距离		
@@ -377,67 +379,6 @@ u8 datatemp[SIZE];
 			case 7: Run_Scan();
 							break;
 							
-		}
-				key=KEY_Scan(0);
-		if(key==KEY_UP)//WK_UP按下,写入STM32 FLASH
-		{
-			if(Select_Pro==1)
-			{
-				STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-				STMFLASH_Write(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-			}
-			if(Select_Pro==2)
-			{
-				STMFLASH_Write(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-				STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-			}
-			if(Select_Pro==3)
-			{
-				STMFLASH_Write(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-				STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-			}
-		}
-		if(key==KEY_DOWN)//KEY1按下,读取字符串并显示
-		{
-			if(Select_Pro==1)
-			{
-				STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-				STMFLASH_Read(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-			}
-			if(Select_Pro==2)
-			{
-				STMFLASH_Read(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-				STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-			}
-			if(Select_Pro==3)
-			{
-				STMFLASH_Read(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-				STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-			}
-			for(i=0;i<100;i++)
-			{
-				command_edit_num_wei[i][1]=command_edit_num[i]/1000;
-				command_edit_num_wei[i][2]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000)/100;
-				command_edit_num_wei[i][3]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100)/10;
-				command_edit_num_wei[i][4]=command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100-command_edit_num_wei[i][3]*10;
-			}
-			if(edit_statement==0||edit_statement==1)
-			{
-				display_command();
-			}
-			for(k=0;k<=100;k++)
-			{
-				if(command[k]==0)
-				{
-						command_max=k-1;
-					if(command_max==255)
-					{
-						command_max=0;
-					}
-						break;
-				}
-			}
-			page_max=command_max/5+1;
 		}
 		i++; 
 	}
@@ -909,14 +850,35 @@ void jia_service(void)//加服务函数
 					}
 					display_command();
 				}
-			  if(command[command_num]==4||command[command_num]==5||command[command_num]==6)
+			  if(command[command_num]==4||command[command_num]==6)//输入 扫描
 				{
 					if(Pinpoint_Edit==3)
 					{
 						command_edit_num_wei[command_num][Pinpoint_Edit]++;//对应得操作数++；command_num用于指示当前编辑第几条指令，Pinpoint_Edit用于指示指令4位操作数的某一位
-						if(command_edit_num_wei[command_num][Pinpoint_Edit]==10)
+						if(command_edit_num_wei[command_num][Pinpoint_Edit]==7)
+						{
+							command_edit_num_wei[command_num][Pinpoint_Edit]=1;
+						}
+						display_command();
+					}
+						if(Pinpoint_Edit==4)//0,1用来指示高低
+					{
+						command_edit_num_wei[command_num][Pinpoint_Edit]++;//对应得操作数++；command_num用于指示当前编辑第几条指令，Pinpoint_Edit用于指示指令4位操作数的某一位
+						if(command_edit_num_wei[command_num][Pinpoint_Edit]==2)
 						{
 							command_edit_num_wei[command_num][Pinpoint_Edit]=0;
+						}
+						display_command();
+					}
+				}
+						if(command[command_num]==5)//输出
+				{
+					if(Pinpoint_Edit==3)
+					{
+						command_edit_num_wei[command_num][Pinpoint_Edit]++;//对应得操作数++；command_num用于指示当前编辑第几条指令，Pinpoint_Edit用于指示指令4位操作数的某一位
+						if(command_edit_num_wei[command_num][Pinpoint_Edit]==5)
+						{
+							command_edit_num_wei[command_num][Pinpoint_Edit]=1;
 						}
 						display_command();
 					}
@@ -1762,14 +1724,14 @@ void Short_Line_flicker(void)//短线闪烁
 	  int i,j;
 	 	if(edit_statement==0)//编辑指令
 	{
-		if(flicker_count==50000)//在程序中计数
+		if(flicker_count==2000)//在程序中计数
 		{
 			for(j=1;j<=3;j++)//显示代码输入的横线段
 		  {
 					 LCD_DrawLine(60,50*(command_num%5+1)-30+32+j, 140,50*(command_num%5+1)-30+32+j);
 			}
 		}
-		if(flicker_count>100000)
+		if(flicker_count>4000)
 		{
 			LCD_Fill(60, 50*(command_num%5+1)-30+32+1, 140,50*(command_num%5+1)-30+32+3,WHITE);//横线清0
 			flicker_count=0;
@@ -1780,14 +1742,14 @@ void Short_Line_flicker(void)//短线闪烁
 	{
 		if(command[command_num]==7||command[command_num]==1||command[command_num]==8||command[command_num]==20||command[command_num]==21)//1、7指令的闪烁
 		{
-			if(flicker_count==50000)//在程序中计数
+			if(flicker_count==2000)//在程序中计数
 			{
 				for(j=1;j<=3;j++)//显示代码输入的横线段
 				{
 						 LCD_DrawLine(150+35*(Pinpoint_Edit-1),50*(command_num%5+1)-30+32+j, 150+35*(Pinpoint_Edit-1)+25,50*(command_num%5+1)-30+32+j);
 				}
 			}
-			if(flicker_count==100000)
+			if(flicker_count==4000)
 			{
 				for(j=1;j<=3;j++)
 				{
@@ -1799,14 +1761,14 @@ void Short_Line_flicker(void)//短线闪烁
 		}
 			if(command[command_num]==2||command[command_num]==3)//2,3三个指令的闪烁
 		{
-			if(flicker_count==50000)//在程序中计数
+			if(flicker_count==2000)//在程序中计数
 			{
 				for(j=1;j<=3;j++)//显示代码输入的横线段
 				{
 						 LCD_DrawLine(150+35*(Pinpoint_Edit-1),50*(command_num%5+1)-30+32+j, 150+35*(Pinpoint_Edit-1)+25,50*(command_num%5+1)-30+32+j);
 				}
 			}
-			if(flicker_count==100000)
+			if(flicker_count==4000)
 			{
 				for(j=1;j<=3;j++)
 				{
@@ -1818,14 +1780,14 @@ void Short_Line_flicker(void)//短线闪烁
 		}
 			if(command[command_num]==4||command[command_num]==5||command[command_num]==6)//4,5,6三个指令的闪烁
 		{
-			if(flicker_count==50000)//在程序中计数
+			if(flicker_count==2000)//在程序中计数
 			{
 				for(j=1;j<=3;j++)//显示代码输入的横线段
 				{
 						 LCD_DrawLine(150+35*(2*Pinpoint_Edit-5),50*(command_num%5+1)-30+32+j, 150+35*(2*Pinpoint_Edit-5)+25,50*(command_num%5+1)-30+32+j);
 				}
 			}
-			if(flicker_count==100000)
+			if(flicker_count==4000)
 			{
 				for(j=1;j<=3;j++)
 				{
@@ -2447,6 +2409,7 @@ void input_command(void)//扫描某个按键按下
 																	+Weiyi_Dis[i].Pulse_Acc.shi*10
 																	+Weiyi_Dis[i].Pulse_Acc.ge;
 									}
+									
 								}
 								for(i=0;i<=99;i++)//判断是否有扫描指令
 								{
@@ -2465,10 +2428,10 @@ void input_command(void)//扫描某个按键按下
 									edit_statement=3;
 									uc_lock=0;
 								}
-								 showhanzi32(395,220,30);//运行
+								 showhanzi32(395,220,30);//停止
 								 showhanzi32(430,220,31);
-								delay_ms(1000);
-								delay_ms(1000);
+							//	delay_ms(1000);
+								//delay_ms(1000);
 					}
 					else
 					{
@@ -2802,24 +2765,52 @@ void display_command(void)//除了显示指令，还有计算指令操作数，按完按键之后调用
 }
 void save_command(void)
 {
+	u8 i;
 	save_ok=1;
 	
+		for(i=0;i<=99;i++)//计算存储的位移
+  {
+		if(command[i]==1)
+		{
+		Weiyi[i].Pulse_Num=Weiyi_Dis[i].Pulse_Num.shiwan*100000
+											+Weiyi_Dis[i].Pulse_Num.wan*10000
+											+Weiyi_Dis[i].Pulse_Num.qian*1000
+											+Weiyi_Dis[i].Pulse_Num.bai*100
+											+Weiyi_Dis[i].Pulse_Num.shi*10
+											+Weiyi_Dis[i].Pulse_Num.ge;//得到的是位移距离
+									
+		Weiyi[i].Pulse_Rate=Weiyi_Dis[i].Pulse_Rate.wan*10000
+												+Weiyi_Dis[i].Pulse_Rate.qian*1000
+												+Weiyi_Dis[i].Pulse_Rate.bai*100
+												+Weiyi_Dis[i].Pulse_Rate.shi*10
+												+Weiyi_Dis[i].Pulse_Rate.ge;
+		Weiyi[i].Speed_Acc=Weiyi_Dis[i].Pulse_Acc.wan*10000
+												+Weiyi_Dis[i].Pulse_Acc.qian*1000
+												+Weiyi_Dis[i].Pulse_Acc.bai*100
+												+Weiyi_Dis[i].Pulse_Acc.shi*10
+												+Weiyi_Dis[i].Pulse_Acc.ge;
+		}
+									
+	}
 	if(Select_Pro==1)
 	{
 		STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)command,SIZE);
 		STMFLASH_Write(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
+		STMFLASH_Write(FLASH_SAVE_WEIYI_ADDR,(u16*)Weiyi,SIZE);
 	}
 	if(Select_Pro==2)
 	{
-		STMFLASH_Write(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-		STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
+		STMFLASH_Write(FLASH_SAVE_ADDR+1600,(u16*)command,SIZE);
+		STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+1600,(u16*)command_edit_num,SIZE);
+		STMFLASH_Write(FLASH_SAVE_WEIYI_ADDR+1600,(u16*)Weiyi,SIZE);
 	}
 	if(Select_Pro==3)
 	{
-		STMFLASH_Write(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-		STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
+		STMFLASH_Write(FLASH_SAVE_ADDR+3200,(u16*)command,SIZE);
+		STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+3200,(u16*)command_edit_num,SIZE);
+		STMFLASH_Write(FLASH_SAVE_WEIYI_ADDR+3200,(u16*)Weiyi,SIZE);
 	}
-	
+
 	LCD_Fill(80, 80, 250,150,WHITE);
 	LCD_DrawRectangle(80,80 ,250,150);
 	
@@ -2829,8 +2820,77 @@ void save_command(void)
 	showhanzi32(196,100,82);
   delay_ms(1000);
 	delay_ms(1000);
-	LCD_Fill(0, 0, 290,280,BACK_COL);
-	display_command();
+	//LCD_Fill(0, 0, 290,280,BACK_COL);
+	init_lock=1;
+}
+void read_command()
+{
+	u8 i;
+		if(Select_Pro==1)
+							{
+								STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)command,SIZE);
+								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
+								STMFLASH_Read(FLASH_SAVE_WEIYI_ADDR,(u16*)Weiyi,SIZE);
+							}
+							if(Select_Pro==2)
+							{
+								STMFLASH_Read(FLASH_SAVE_ADDR+1600,(u16*)command,SIZE);
+								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+1600,(u16*)command_edit_num,SIZE);
+								STMFLASH_Read(FLASH_SAVE_WEIYI_ADDR+1600,(u16*)Weiyi,SIZE);
+							}
+							if(Select_Pro==3)
+							{
+								STMFLASH_Read(FLASH_SAVE_ADDR+3200,(u16*)command,SIZE);
+								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+3200,(u16*)command_edit_num,SIZE);
+								STMFLASH_Read(FLASH_SAVE_WEIYI_ADDR+3200,(u16*)Weiyi,SIZE);
+							}
+							for(i=0;i<100;i++)
+							{
+								command_edit_num_wei[i][1]=command_edit_num[i]/1000;
+								command_edit_num_wei[i][2]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000)/100;
+								command_edit_num_wei[i][3]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100)/10;
+								command_edit_num_wei[i][4]=command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100-command_edit_num_wei[i][3]*10;
+							 
+								Weiyi_Dis[i].Pulse_Num.shiwan=Weiyi[i].Pulse_Num/100000;
+								Weiyi_Dis[i].Pulse_Num.wan=(Weiyi[i].Pulse_Num-Weiyi_Dis[i].Pulse_Num.shiwan*100000)/10000;
+								Weiyi_Dis[i].Pulse_Num.qian=(Weiyi[i].Pulse_Num-Weiyi_Dis[i].Pulse_Num.shiwan*100000-Weiyi_Dis[i].Pulse_Num.wan*10000)/1000;
+								Weiyi_Dis[i].Pulse_Num.bai=(Weiyi[i].Pulse_Num-Weiyi_Dis[i].Pulse_Num.shiwan*100000-Weiyi_Dis[i].Pulse_Num.wan*10000-Weiyi_Dis[i].Pulse_Num.qian*1000)/100;
+								Weiyi_Dis[i].Pulse_Num.shi=(Weiyi[i].Pulse_Num-Weiyi_Dis[i].Pulse_Num.shiwan*100000-Weiyi_Dis[i].Pulse_Num.wan*10000-Weiyi_Dis[i].Pulse_Num.qian*1000-Weiyi_Dis[i].Pulse_Num.bai*100)/10;
+								Weiyi_Dis[i].Pulse_Num.ge=(Weiyi[i].Pulse_Num-Weiyi_Dis[i].Pulse_Num.shiwan*100000-Weiyi_Dis[i].Pulse_Num.wan*10000-Weiyi_Dis[i].Pulse_Num.qian*1000-Weiyi_Dis[i].Pulse_Num.bai*100-Weiyi_Dis[i].Pulse_Num.shi*10)/1;
+
+							  Weiyi_Dis[i].Pulse_Rate.shiwan=Weiyi[i].Pulse_Rate/100000;
+								Weiyi_Dis[i].Pulse_Rate.wan=(Weiyi[i].Pulse_Rate-Weiyi_Dis[i].Pulse_Rate.shiwan*100000)/10000;
+								Weiyi_Dis[i].Pulse_Rate.qian=(Weiyi[i].Pulse_Rate-Weiyi_Dis[i].Pulse_Rate.shiwan*100000-Weiyi_Dis[i].Pulse_Rate.wan*10000)/1000;
+								Weiyi_Dis[i].Pulse_Rate.bai=(Weiyi[i].Pulse_Rate-Weiyi_Dis[i].Pulse_Rate.shiwan*100000-Weiyi_Dis[i].Pulse_Rate.wan*10000-Weiyi_Dis[i].Pulse_Rate.qian*1000)/100;
+								Weiyi_Dis[i].Pulse_Rate.shi=(Weiyi[i].Pulse_Rate-Weiyi_Dis[i].Pulse_Rate.shiwan*100000-Weiyi_Dis[i].Pulse_Rate.wan*10000-Weiyi_Dis[i].Pulse_Rate.qian*1000-Weiyi_Dis[i].Pulse_Rate.bai*100)/10;
+								Weiyi_Dis[i].Pulse_Rate.ge=(Weiyi[i].Pulse_Rate-Weiyi_Dis[i].Pulse_Rate.shiwan*100000-Weiyi_Dis[i].Pulse_Rate.wan*10000-Weiyi_Dis[i].Pulse_Rate.qian*1000-Weiyi_Dis[i].Pulse_Rate.bai*100-Weiyi_Dis[i].Pulse_Rate.shi*10)/1;
+							
+							  Weiyi_Dis[i].Pulse_Acc.shiwan=Weiyi[i].Speed_Acc/100000;
+								Weiyi_Dis[i].Pulse_Acc.wan=(Weiyi[i].Speed_Acc-Weiyi_Dis[i].Pulse_Acc.shiwan*100000)/10000;
+								Weiyi_Dis[i].Pulse_Acc.qian=(Weiyi[i].Speed_Acc-Weiyi_Dis[i].Pulse_Acc.shiwan*100000-Weiyi_Dis[i].Pulse_Acc.wan*10000)/1000;
+								Weiyi_Dis[i].Pulse_Acc.bai=(Weiyi[i].Speed_Acc-Weiyi_Dis[i].Pulse_Acc.shiwan*100000-Weiyi_Dis[i].Pulse_Acc.wan*10000-Weiyi_Dis[i].Pulse_Acc.qian*1000)/100;
+								Weiyi_Dis[i].Pulse_Acc.shi=(Weiyi[i].Speed_Acc-Weiyi_Dis[i].Pulse_Acc.shiwan*100000-Weiyi_Dis[i].Pulse_Acc.wan*10000-Weiyi_Dis[i].Pulse_Acc.qian*1000-Weiyi_Dis[i].Pulse_Acc.bai*100)/10;
+								Weiyi_Dis[i].Pulse_Acc.ge=(Weiyi[i].Speed_Acc-Weiyi_Dis[i].Pulse_Acc.shiwan*100000-Weiyi_Dis[i].Pulse_Acc.wan*10000-Weiyi_Dis[i].Pulse_Acc.qian*1000-Weiyi_Dis[i].Pulse_Acc.bai*100-Weiyi_Dis[i].Pulse_Acc.shi*10)/1;
+							
+							
+							}
+							if(edit_statement==0||edit_statement==1)
+							{
+								display_command();
+							}
+							for(k=0;k<=100;k++)
+							{
+								if(command[k]==0)
+								{
+										command_max=k-1;
+									if(command_max==255)
+									{
+										command_max=0;
+									}
+										break;
+								}
+							}
+							page_max=command_max/5+1;
 }
 void Run(void)//运行指令
 {
@@ -2920,7 +2980,7 @@ void Run_Time(u16 num)
 }
 void Run_Speed(u16 num)
 {
-	time_state=3;
+	time_state=3;//跑速度指令
 	if(num==0)
 	{
 			end=1;
@@ -3010,30 +3070,6 @@ void Run_Input(u16 Xi,u16 Xstate)
 							}
 						}
 							break;
-			case 7:while(GO_ON==0)
-						{
-							if(X7==Xstate)
-							{
-								delay_ms(10);
-								if(X7==Xstate)
-								{
-									GO_ON=1;
-								}
-							}
-						}
-							break;
-			case 8:while(GO_ON==0)
-						{
-							if(X8==Xstate)
-							{
-								delay_ms(10);
-								if(X8==Xstate)
-								{
-									GO_ON=1;
-								}
-							}
-						}
-							break;
 		}
 	
 
@@ -3069,7 +3105,7 @@ void Run_Scan(void)
 			delay_ms(10);
 			if(tp_dev.sta&TP_PRES_DOWN)
 			{
-					if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>215&&tp_dev.y<261)//运行
+					if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>215&&tp_dev.y<261)//停止键
 					{
 						 end=1;
 						pulse_count=0;
@@ -3083,7 +3119,7 @@ void Run_Scan(void)
 		}
 		
 			
-	for(i=0;i<ScanCommandNum;i++)
+	for(i=0;i<ScanCommandNum;i++)//扫描端口，前者为端口号，后者为电平状态
 	{
 		scan=Scan_GPIO(command_edit_num_wei[ScanCommand[i]][3],command_edit_num_wei[ScanCommand[i]][4]);
 		if(scan==ScanOK)
@@ -3213,63 +3249,11 @@ void set_system(void)
 				}
 				if(tp_dev.x>300&&tp_dev.x<380&&tp_dev.y>190&&tp_dev.y<245)//读取
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
-							for(i=0;i<100;i++)
-							{
-								command_edit_num_wei[i][1]=command_edit_num[i]/1000;
-								command_edit_num_wei[i][2]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000)/100;
-								command_edit_num_wei[i][3]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100)/10;
-								command_edit_num_wei[i][4]=command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100-command_edit_num_wei[i][3]*10;
-							}
-							if(edit_statement==0||edit_statement==1)
-							{
-								display_command();
-							}
-							for(k=0;k<=100;k++)
-							{
-								if(command[k]==0)
-								{
-										command_max=k-1;
-									if(command_max==255)
-									{
-										command_max=0;
-									}
-										break;
-								}
-							}
-							page_max=command_max/5+1;
+          read_command();
 				}
 				if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>190&&tp_dev.y<245)//保存
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
+					save_command();
 				}
 			
 			}
@@ -3403,63 +3387,11 @@ void set_system_2(void)
 				}
 				if(tp_dev.x>300&&tp_dev.x<380&&tp_dev.y>190&&tp_dev.y<245)//读取
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
-							for(i=0;i<100;i++)
-							{
-								command_edit_num_wei[i][1]=command_edit_num[i]/1000;
-								command_edit_num_wei[i][2]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000)/100;
-								command_edit_num_wei[i][3]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100)/10;
-								command_edit_num_wei[i][4]=command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100-command_edit_num_wei[i][3]*10;
-							}
-							if(edit_statement==0||edit_statement==1)
-							{
-								display_command();
-							}
-							for(k=0;k<=100;k++)
-							{
-								if(command[k]==0)
-								{
-										command_max=k-1;
-									if(command_max==255)
-									{
-										command_max=0;
-									}
-										break;
-								}
-							}
-							page_max=command_max/5+1;
+            read_command();
 				}
 				if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>190&&tp_dev.y<245)//保存
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
+						save_command();
 				}
 
 			}
@@ -3594,63 +3526,11 @@ void set_system_3(void)
 				}
 				if(tp_dev.x>300&&tp_dev.x<380&&tp_dev.y>190&&tp_dev.y<245)//读取
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Read(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Read(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
-							for(i=0;i<100;i++)
-							{
-								command_edit_num_wei[i][1]=command_edit_num[i]/1000;
-								command_edit_num_wei[i][2]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000)/100;
-								command_edit_num_wei[i][3]=(command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100)/10;
-								command_edit_num_wei[i][4]=command_edit_num[i]-command_edit_num_wei[i][1]*1000-command_edit_num_wei[i][2]*100-command_edit_num_wei[i][3]*10;
-							}
-							if(edit_statement==0||edit_statement==1)
-							{
-								display_command();
-							}
-							for(k=0;k<=100;k++)
-							{
-								if(command[k]==0)
-								{
-										command_max=k-1;
-									if(command_max==255)
-									{
-										command_max=0;
-									}
-										break;
-								}
-							}
-							page_max=command_max/5+1;
+						read_command();
 				}
 				if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>190&&tp_dev.y<245)//保存
 				{
-							if(Select_Pro==1)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==2)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+400,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+400,(u16*)command_edit_num,SIZE);
-							}
-							if(Select_Pro==3)
-							{
-								STMFLASH_Write(FLASH_SAVE_ADDR+800,(u16*)command,SIZE);
-								STMFLASH_Write(FLASH_SAVE_EDIT_ADDR+800,(u16*)command_edit_num,SIZE);
-							}
+						save_command();
 				}
 			}
 			
@@ -3731,28 +3611,6 @@ int Scan_GPIO(u16 Xi,u16 Xstate)
 							{
 								delay_ms(10);
 								if(X6==Xstate)
-								{
-									return ScanOK;
-								}
-								else return ScanError;
-							}
-							else return ScanError;
-							break;
-			case 7:if(X7==Xstate)
-							{
-								delay_ms(10);
-								if(X7==Xstate)
-								{
-									return ScanOK;
-								}
-								else return ScanError;
-							}
-							else return ScanError;
-							break;
-			case 8:if(X8==Xstate)
-							{
-								delay_ms(10);
-								if(X8==Xstate)
 								{
 									return ScanOK;
 								}
