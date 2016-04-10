@@ -2430,8 +2430,8 @@ void input_command(void)//É¨ÃèÄ³¸ö°´¼ü°´ÏÂ
 								}
 								 showhanzi32(395,220,30);//Í£Ö¹
 								 showhanzi32(430,220,31);
-							//	delay_ms(1000);
-								//delay_ms(1000);
+								delay_ms(1000);//ÑÓÊ±±ØĞëÓĞ£¬²»È»É¨ÃèÖ¸Áî»áÖ±½ÓÍ£Ö¹£¡£¡
+								delay_ms(1000);
 					}
 					else
 					{
@@ -2939,7 +2939,7 @@ void Run_WeiYi(u8 dir,u16 num)
 			delay_ms(10);
 			if(tp_dev.sta&TP_PRES_DOWN)
 			{
-					if(tp_dev.x>300&&tp_dev.x<380&&tp_dev.y>190&&tp_dev.y<245)//Í£Ö¹¼ü
+					if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>215&&tp_dev.y<261)//Í£Ö¹¼ü
 					{
 						 end=1;
 						pulse_count=0;
@@ -2967,11 +2967,17 @@ void Run_Time(u16 num)
 			delay_ms(10);
 			if(tp_dev.sta&TP_PRES_DOWN)
 			{
-					if(tp_dev.x>300&&tp_dev.x<380&&tp_dev.y>190&&tp_dev.y<245)//Í£Ö¹¼ü
+					if(tp_dev.x>390&&tp_dev.x<470&&tp_dev.y>215&&tp_dev.y<261)//Í£Ö¹¼ü
 					{
 						 
-					   edit_statement=2;
-						 break;
+						pulse_count=0;
+						p1=0;
+						speed_lock=1;
+						init_lock=1;
+						TIM_Cmd(TIM3, DISABLE);
+					  edit_statement=0;
+						delay_ms(1000);
+						break;
 					}
 				
 			}
