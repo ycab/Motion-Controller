@@ -941,9 +941,19 @@ void Process_Socket_Data(SOCKET s)
 				command_edit_num_wei[i-1][3]=CharToDec(Rx_Buffer[i*5+1]);
 				command_edit_num_wei[i-1][4]=CharToDec(Rx_Buffer[i*5+2]);
 			}
+				for(i=Cmd_Num+1;i<=99;i++)
+			{
+				command[i-1]=0;
+			  command_edit_num_wei[i-1][1]=0;
+				command_edit_num_wei[i-1][2]=0;
+				command_edit_num_wei[i-1][3]=0;
+				command_edit_num_wei[i-1][4]=0;
+			}
+			
 		}
 		display_command();
 	}
+	
 	
 	memcpy(Tx_Buffer, Rx_Buffer, size);			
 	Write_SOCK_Data_Buffer(s, Tx_Buffer, size);

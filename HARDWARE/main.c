@@ -338,7 +338,7 @@ u8 datatemp[SIZE];
 	TIM3_PWM_Init(7199,99);
 	//TIM_SetCompare3(TIM3,3000);
  	POINT_COLOR=BLACK;//设置字体为红色 
-	 BACK_COLOR=WHITE;
+	 BACK_COLOR=BACK_COL;
 	 LCD_Clear(TOP_0);
 	//
 	 start_init();
@@ -467,7 +467,7 @@ void start_init()
 	for(i=1;i<=5;i++)//显示代码标号
 	{
 		LCD_ShowNum_32(10,50*i-30,0);
-		LCD_ShowNum_32(28,50*i-30,i-1);
+		LCD_ShowNum_32(26,50*i-30,i-1);
 	}
 	POINT_COLOR=LIGHTBLUE ;
 	for(i=1;i<=5;i++)
@@ -2470,6 +2470,19 @@ void input_command(void)//扫描某个按键按下
 								delay_ms(1000);
 								delay_ms(1000);
 					}
+					else
+					{
+						  LCD_Fill(80, 80, 250,150,WHITE);
+	            LCD_DrawRectangle(80,80 ,250,150);
+							showhanzi32(100,100,95);//请先
+							showhanzi32(132,100,96);
+							showhanzi32(164,100,77);//保存
+							showhanzi32(196,100,78);
+						  delay_ms(1000);
+            	delay_ms(1000);
+	            LCD_Fill(0, 0, 290,280,BACK_COL);
+	            display_command();
+					}
 				}
 				for(i=1;i<=5;i++)//判断是否是指令段按下
 				{
@@ -2554,7 +2567,7 @@ void display_command(void)//除了显示指令，还有计算指令操作数，按完按键之后调用
 	for(i=1;i<=5;i++)//显示代码标号
 	{
 		LCD_ShowNum_32(10,50*i-30,(page-1)*5/10);
-		LCD_ShowNum_32(28,50*i-30,(page-1)*5%10+i-1);
+		LCD_ShowNum_32(26,50*i-30,(page-1)*5%10+i-1);
 	}
 	for(i=1;i<=5;i++)//显示指令
 	{
@@ -2816,7 +2829,7 @@ void save_command(void)
 	showhanzi32(196,100,82);
   delay_ms(1000);
 	delay_ms(1000);
-	LCD_Fill(0, 0, 290,280,WHITE);
+	LCD_Fill(0, 0, 290,280,BACK_COL);
 	display_command();
 }
 void Run(void)//运行指令
