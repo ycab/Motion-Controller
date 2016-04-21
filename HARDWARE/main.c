@@ -79,16 +79,7 @@ u8 edit_statement=0;//编辑状态，0为编辑指令，1为编辑指令操作数，2为编辑位移指令
 
 
 Set_Weiyi Weiyi[100];//可供设置100段位移
-typedef struct
-{
-	u8 ge;
-	u8 shi;
-	u8 bai;
-	u8 qian;
-	u8 wan;
-	u8 shiwan;
 
-}Num_Wei;
 typedef struct
 {
 	u8 ge;
@@ -96,12 +87,6 @@ typedef struct
 	u8 bai;
 	u8 qian;
 }Num_4_Wei;//用于编辑4位的指令操作数
-typedef struct
-{
-	Num_Wei Pulse_Num; 
-	Num_Wei Pulse_Rate; 
-	Num_Wei Pulse_Acc;
-}Dis_Weiyi;//用于显示位移
 
 
 

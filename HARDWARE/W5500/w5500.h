@@ -1,6 +1,7 @@
 #ifndef	_W5500_H_
 #define	_W5500_H_
 #include "delay.h"   
+#include "timer.h"
 /***************** Common Register *****************/
 #define MR		0x0000
 	#define RST		0x80
@@ -275,6 +276,9 @@ extern u8 command_num;
 extern u8 command[100];
 extern u8 command_edit_num_wei[100][5];//用于编辑4位的指令操作数,拆分成位，共一百条指令
 extern u16 command_edit_num[100];//用以编辑操作数，将上一行的4位合并，即可得到当前具体操作数
+extern Set_Weiyi Weiyi[100];
+extern Dis_Weiyi Weiyi_Dis[100];//显示100段位移
+extern u8 edit_statement;
 void set_weiyi_init(u8 statement);
 void set_weiyi(u8 statement);
 void edit_init(void);//按键界面

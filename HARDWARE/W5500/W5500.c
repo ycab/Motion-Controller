@@ -932,6 +932,7 @@ void Process_Socket_Data(SOCKET s)
 	{
 		if(Rx_Buffer[1]=='A')
 		{
+			edit_statement=0;
 			Cmd_Num=CharToDec(Rx_Buffer[2]);
 			for(i=1;i<=Cmd_Num;i++)
 			{
@@ -940,6 +941,49 @@ void Process_Socket_Data(SOCKET s)
 				command_edit_num_wei[i-1][2]=CharToDec(Rx_Buffer[i*5]);
 				command_edit_num_wei[i-1][3]=CharToDec(Rx_Buffer[i*5+1]);
 				command_edit_num_wei[i-1][4]=CharToDec(Rx_Buffer[i*5+2]);
+				
+				if(command[i-1]==0x01)
+				{
+					Weiyi_Dis[i-1].Pulse_Num.shiwan=0;
+					Weiyi_Dis[i-1].Pulse_Num.wan=command_edit_num_wei[i-1][1];
+					Weiyi_Dis[i-1].Pulse_Num.qian=command_edit_num_wei[i-1][2];
+					Weiyi_Dis[i-1].Pulse_Num.bai=command_edit_num_wei[i-1][3];
+					Weiyi_Dis[i-1].Pulse_Num.shi=command_edit_num_wei[i-1][4];
+					Weiyi_Dis[i-1].Pulse_Num.ge=0;
+					
+					Weiyi_Dis[i-1].Pulse_Rate.wan=0;
+					Weiyi_Dis[i-1].Pulse_Rate.qian=5;
+					Weiyi_Dis[i-1].Pulse_Rate.bai=0;
+					Weiyi_Dis[i-1].Pulse_Rate.shi=0;
+					Weiyi_Dis[i-1].Pulse_Rate.ge=0;
+					
+					Weiyi_Dis[i-1].Pulse_Acc.wan=0;
+					Weiyi_Dis[i-1].Pulse_Acc.qian=0;
+					Weiyi_Dis[i-1].Pulse_Acc.bai=0;
+					Weiyi_Dis[i-1].Pulse_Acc.shi=0;
+					Weiyi_Dis[i-1].Pulse_Acc.ge=1;
+				}
+				else
+				{
+					Weiyi_Dis[i-1].Pulse_Num.shiwan=0;
+					Weiyi_Dis[i-1].Pulse_Num.wan=0;
+					Weiyi_Dis[i-1].Pulse_Num.qian=0;
+					Weiyi_Dis[i-1].Pulse_Num.bai=0;
+					Weiyi_Dis[i-1].Pulse_Num.shi=0;
+					Weiyi_Dis[i-1].Pulse_Num.ge=0;
+					
+					Weiyi_Dis[i-1].Pulse_Rate.wan=0;
+					Weiyi_Dis[i-1].Pulse_Rate.qian=0;
+					Weiyi_Dis[i-1].Pulse_Rate.bai=0;
+					Weiyi_Dis[i-1].Pulse_Rate.shi=0;
+					Weiyi_Dis[i-1].Pulse_Rate.ge=0;
+					
+					Weiyi_Dis[i-1].Pulse_Acc.wan=0;
+					Weiyi_Dis[i-1].Pulse_Acc.qian=0;
+					Weiyi_Dis[i-1].Pulse_Acc.bai=0;
+					Weiyi_Dis[i-1].Pulse_Acc.shi=0;
+					Weiyi_Dis[i-1].Pulse_Acc.ge=0;
+				}
 			}
 				for(i=Cmd_Num+1;i<=99;i++)
 			{

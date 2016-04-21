@@ -39,6 +39,22 @@ typedef struct
 	u16 Pulse_Rate;//脉冲频率
 	u16 Speed_Acc;//脉冲加减速度
 }Set_Weiyi;
+typedef struct
+{
+	u8 ge;
+	u8 shi;
+	u8 bai;
+	u8 qian;
+	u8 wan;
+	u8 shiwan;
+
+}Num_Wei;
+typedef struct
+{
+	Num_Wei Pulse_Num; 
+	Num_Wei Pulse_Rate; 
+	Num_Wei Pulse_Acc;
+}Dis_Weiyi;//用于显示位移
 extern Set_Weiyi Weiyi[100];
 void TIM3_Int_Init(u16 arr,u16 psc);
 void TIM3_PWM_Init(u16 arr,u16 psc);
